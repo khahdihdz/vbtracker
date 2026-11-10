@@ -2,7 +2,7 @@ const SOURCE_URL = "https://vangbac.vietinbankgold.vn/";
 const CORS = {"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type","cache-control":"no-store"};
 const json = (data,status=200)=>new Response(JSON.stringify(data),{status,headers:{...CORS,"content-type":"application/json; charset=utf-8"}});
 const now = ()=>new Date().toISOString();
-function cleanText(s){return String(s||"").replace(/<[^>]*>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/&#(d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/\s+/g," ").trim()}
+function cleanText(s){return String(s||"").replace(/<[^>]*>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/&#(\\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/\s+/g," ").trim()}
 function numberValue(s){if(typeof s==="number")return s;const t=String(s||"").replace(/[^\d]/g,"");return t?Number(t):null}
 function normalizeProduct(item){
  const name=cleanText(item.name||item.productName||item.tenSanPham||item.title);
