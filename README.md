@@ -48,7 +48,7 @@ Tạo D1:
 wrangler d1 create vbtracker-history
 ```
 
-Sao chép `database_id` được Cloudflare trả về vào `wrangler.toml`, thay giá trị `REPLACE_WITH_D1_DATABASE_ID`.
+Trong GitHub repository, mở Settings → Secrets and variables → Actions → Variables → New repository variable và tạo `CLOUDFLARE_D1_DATABASE_ID` với giá trị `database_id` Cloudflare trả về. Không cần đưa ID này vào source code. Workflow deploy sẽ chèn biến vào bản cấu hình tạm thời trước khi deploy. Tạo thêm Repository Variable `CLOUDFLARE_ACCOUNT_ID`.
 
 Khởi tạo schema:
 
@@ -61,6 +61,8 @@ wrangler d1 execute vbtracker-history --remote --file=worker/schema.sql
 ```bash
 wrangler secret put ADMIN_TOKEN
 ```
+
+Để deploy tự động bằng GitHub Actions, tạo Repository Secrets `CLOUDFLARE_API_TOKEN` và `ADMIN_TOKEN`. Tạo Repository Variables `CLOUDFLARE_ACCOUNT_ID` và `CLOUDFLARE_D1_DATABASE_ID`. Workflow deploy sẽ kiểm tra các biến cần thiết, thay placeholder D1 ID trong cấu hình tạm thời và deploy Worker.
 
 Nếu đã xác minh endpoint JSON chính thức, cấu hình `SOURCE_API_URL` trong Worker Variables. Không đặt token trong frontend.
 
