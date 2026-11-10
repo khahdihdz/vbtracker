@@ -40,9 +40,11 @@ jobs:
 
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           secrets: |
-            ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+            ADMIN_TOKEN
