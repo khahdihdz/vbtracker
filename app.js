@@ -18,7 +18,7 @@ function renderProducts() {
 }
 function renderHistory() {
   const rows = history.slice(0,100);
-  $("history-body").innerHTML = rows.length ? rows.map(h=>'<tr><td>'+esc(timeLabel(h.time))+'</td><td>'+esc(h.name)+'</td><td>'+money(h.buy)+'</td><td>'+money(h.sell)+'</td><td>'+money(Number(h.sell)-Number(h.buy))+'</td></tr>').join("") : '<tr><td colspan="5" class="empty">Chưa có lịch sử. Lịch sử sẽ tích lũy sau khi hệ thống bắt đầu thu thập dữ liệu.</td></tr>';
+  $("history-body").innerHTML = rows.length ? rows.map(h=>'<tr><td>'+esc(timeLabel(h.time))+'</td><td>'+esc(h.name)+'</td><td>'+money(h.buy)+'</td><td>'+money(h.sell)+'</td><td>'+money(Number(h.sell)-Number(h.buy))+'</td><td>'+esc(h.source||'—')+'</td></tr>').join("") : '<tr><td colspan="5" class="empty">Chưa có lịch sử. Lịch sử sẽ tích lũy sau khi hệ thống bắt đầu thu thập dữ liệu.</td></tr>';
 }
 function renderChart() {
   const index = Number($("product-select").value || 0), p = products[index];
@@ -44,7 +44,7 @@ async function loadData(showSpinner=false) {
     products=data.products; history=Array.isArray(data.history)?data.history:[];
     lastPayload=data; renderProducts(); renderHistory(); renderChart();
     $("updated").textContent=timeLabel(data.fetchedAt || data.updatedAt);
-    $("source-time").textContent=data.sourceUpdatedAt ? "Nguồn công bố: "+timeLabel(data.sourceUpdatedAt) : "Thời gian hệ thống nhận dữ liệu";
+    $("source-time").textContent="Nguồn: "+(data.source||"Không rõ")+(data.sourceUpdatedAt ? " · Công bố: "+timeLabel(data.sourceUpdatedAt) : " · Thời gian hệ thống nhận dữ liệu");
     if(data.stale){setStatus("error","Dữ liệu cũ");setNotice("Không lấy được dữ liệu mới. Đang hiển thị bản ghi gần nhất từ VietinGold; vui lòng kiểm tra lại thời điểm cập nhật.",true)}
     else {setStatus("ok","Đã kết nối");setNotice("Nguồn dữ liệu: VietinBank Gold & Jewellery. Chu kỳ kiểm tra phụ thuộc cấu hình backend; giá chỉ thay đổi khi nguồn công bố cập nhật.")}
   } catch(error) {
@@ -58,6 +58,6 @@ $("refresh").addEventListener("click",()=>loadData(true));
 $("product-select").addEventListener("change",renderChart);
 $("ranges").addEventListener("click",e=>{const b=e.target.closest("button[data-range]");if(!b)return;selectedRange=b.dataset.range;document.querySelectorAll("#ranges button").forEach(x=>x.classList.toggle("active",x===b));renderChart()});
 ["calc-product","calc-qty","calc-unit","calc-side"].forEach(id=>$(id).addEventListener("input",updateCalculator));
-$("csv").addEventListener("click",()=>{if(!history.length){setNotice("Chưa có dữ liệu lịch sử để xuất.",true);return}const rows=[["Thời gian","Sản phẩm","Giá mua","Giá bán"],...history.map(h=>[h.time,h.name,h.buy,h.sell])];const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="vietingold-price-history.csv";a.click();URL.revokeObjectURL(a.href)});
+$("csv").addEventListener("click",()=>{if(!history.length){setNotice("Chưa có dữ liệu lịch sử để xuất.",true);return}const rows=[["Thời gian","Sản phẩm","Giá mua","Giá bán","Nguồn"],...history.map(h=>[h.time,h.name,h.buy,h.sell,h.source||"—"])];const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="vietingold-price-history.csv";a.click();URL.revokeObjectURL(a.href)});
 loadData();setInterval(loadData,60000);
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
