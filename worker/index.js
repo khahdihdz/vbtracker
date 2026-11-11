@@ -109,7 +109,8 @@ async function recordPrices(env,payload){
   p.buyChange=comparable?p.buy-Number(prev.buy):null;
   p.sellChange=comparable?p.sell-Number(prev.sell):null;
   p.change=p.buyChange;
-  const changed=!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==source;\n  const elapsed=prev?Date.now()-new Date(prev.captured_at).getTime():Infinity;\n  if(changed||elapsed>=5*60*1000){
+  const changed=!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==source;
+  const elapsed=prev?Date.now()-new Date(prev.captured_at).getTime():Infinity;\n  if(changed||elapsed>=5*60*1000){
    await env.DB.prepare("INSERT OR IGNORE INTO price_snapshots(product_id,product_name,buy,sell,unit,captured_at,source) VALUES(?,?,?,?,?,?,?)").bind(p.id,p.name,p.buy,p.sell,p.unit,stamp,source).run();
   }
   products.push(p);
