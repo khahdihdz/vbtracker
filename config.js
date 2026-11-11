@@ -1,3 +1,2 @@
-// Đặt URL Worker API sau khi deploy, ví dụ: https://vbtracker-api.<account>.workers.dev
-// Để trống nếu API được phục vụ cùng domain với website.
-window.VBTRACKER_API = "";
+// Worker API dùng chung cho website GitHub Pages và PWA.
+window.VBTRACKER_API = "https://vbtracker-api.khahdihdz.workers.dev";
