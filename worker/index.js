@@ -100,13 +100,22 @@ async function ensureSchema(db){
 }
 async function recordPrices(env,payload){
  await ensureSchema(env.DB);const stamp=now();
- for(const p of payload.products){
+ const source=payload.source||"unknown";
+ const products=[];
+ for(const item of payload.products){
+  const p={...item};
   const prev=await env.DB.prepare("SELECT buy,sell,source FROM price_snapshots WHERE product_id=? ORDER BY captured_at DESC LIMIT 1").bind(p.id).first();
-  if(!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==(p.source||payload.source||"unknown")){
-   await env.DB.prepare("INSERT OR IGNORE INTO price_snapshots(product_id,product_name,buy,sell,unit,captured_at,source) VALUES(?,?,?,?,?,?,?)").bind(p.id,p.name,p.buy,p.sell,p.unit,stamp,p.source||payload.source||"unknown").run();
+  const comparable=prev&&prev.source===source;
+  p.buyChange=comparable?p.buy-Number(prev.buy):null;
+  p.sellChange=comparable?p.sell-Number(prev.sell):null;
+  p.change=p.buyChange;
+  if(!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==source){
+   await env.DB.prepare("INSERT OR IGNORE INTO price_snapshots(product_id,product_name,buy,sell,unit,captured_at,source) VALUES(?,?,?,?,?,?,?)").bind(p.id,p.name,p.buy,p.sell,p.unit,stamp,source).run();
   }
+  products.push(p);
  }
- await env.DB.prepare("INSERT OR REPLACE INTO tracker_state(key,value) VALUES('latest',?)").bind(JSON.stringify({...payload,fetchedAt:stamp,stale:false})).run();
+ const latestPayload={...payload,products,fetchedAt:stamp,stale:false};
+ await env.DB.prepare("INSERT OR REPLACE INTO tracker_state(key,value) VALUES('latest',?)").bind(JSON.stringify(latestPayload)).run();
 }
 async function poll(env){
  const payload=await fetchSource(env);await recordPrices(env,payload);return payload;
