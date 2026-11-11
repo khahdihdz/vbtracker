@@ -104,12 +104,12 @@ async function recordPrices(env,payload){
  const products=[];
  for(const item of payload.products){
   const p={...item};
-  const prev=await env.DB.prepare("SELECT buy,sell,source FROM price_snapshots WHERE product_id=? ORDER BY captured_at DESC LIMIT 1").bind(p.id).first();
+  const prev=await env.DB.prepare("SELECT buy,sell,source,captured_at FROM price_snapshots WHERE product_id=? ORDER BY captured_at DESC LIMIT 1").bind(p.id).first();
   const comparable=prev&&prev.source===source;
   p.buyChange=comparable?p.buy-Number(prev.buy):null;
   p.sellChange=comparable?p.sell-Number(prev.sell):null;
   p.change=p.buyChange;
-  if(!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==source){
+  const changed=!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==source;\n  const elapsed=prev?Date.now()-new Date(prev.captured_at).getTime():Infinity;\n  if(changed||elapsed>=5*60*1000){
    await env.DB.prepare("INSERT OR IGNORE INTO price_snapshots(product_id,product_name,buy,sell,unit,captured_at,source) VALUES(?,?,?,?,?,?,?)").bind(p.id,p.name,p.buy,p.sell,p.unit,stamp,source).run();
   }
   products.push(p);
@@ -124,7 +124,7 @@ async function latest(env){
  await ensureSchema(env.DB);const saved=await env.DB.prepare("SELECT value FROM tracker_state WHERE key='latest'").first();
  let data=saved?.value?JSON.parse(saved.value):null;
  if(!data){try{data=await poll(env)}catch(e){return {products:[],history:[],stale:true,error:e.message,fetchedAt:null}}}
- const hist=await env.DB.prepare("SELECT product_id AS productId,product_name AS name,buy,sell,unit,captured_at AS time,source FROM price_snapshots ORDER BY captured_at DESC LIMIT 1500").all();
+ const hist=await env.DB.prepare("SELECT product_id AS productId,product_name AS name,buy,sell,unit,captured_at AS time,source FROM price_snapshots ORDER BY captured_at DESC LIMIT 35000").all();
  const stale=!data.fetchedAt||Date.now()-new Date(data.fetchedAt).getTime()>5*60*1000;
  return {...data,stale,history:hist.results||[]};
 }
