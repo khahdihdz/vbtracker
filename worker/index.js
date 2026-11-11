@@ -60,7 +60,7 @@ async function poll(env){
  const payload=await fetchSource(env);await recordPrices(env,payload);return payload;
 }
 async function latest(env){
- await ensureSchema(env);const saved=await env.DB.prepare("SELECT value FROM tracker_state WHERE key='latest'").first();
+ await ensureSchema(env.DB);const saved=await env.DB.prepare("SELECT value FROM tracker_state WHERE key='latest'").first();
  let data=saved?.value?JSON.parse(saved.value):null;
  if(!data){try{data=await poll(env)}catch(e){return {products:[],history:[],stale:true,error:e.message,fetchedAt:null}}}
  const hist=await env.DB.prepare("SELECT product_id AS productId,product_name AS name,buy,sell,unit,captured_at AS time FROM price_snapshots ORDER BY captured_at DESC LIMIT 1500").all();
