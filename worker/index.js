@@ -101,8 +101,8 @@ async function ensureSchema(db){
 async function recordPrices(env,payload){
  await ensureSchema(env.DB);const stamp=now();
  for(const p of payload.products){
-  const prev=await env.DB.prepare("SELECT buy,sell FROM price_snapshots WHERE product_id=? ORDER BY captured_at DESC LIMIT 1").bind(p.id).first();
-  if(!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell){
+  const prev=await env.DB.prepare("SELECT buy,sell,source FROM price_snapshots WHERE product_id=? ORDER BY captured_at DESC LIMIT 1").bind(p.id).first();
+  if(!prev||Number(prev.buy)!==p.buy||Number(prev.sell)!==p.sell||prev.source!==(p.source||payload.source||"unknown")){
    await env.DB.prepare("INSERT OR IGNORE INTO price_snapshots(product_id,product_name,buy,sell,unit,captured_at,source) VALUES(?,?,?,?,?,?,?)").bind(p.id,p.name,p.buy,p.sell,p.unit,stamp,p.source||payload.source||"unknown").run();
   }
  }
