@@ -32,7 +32,7 @@ function extractTables(html){
  return [...new Map(out.map(p=>[p.id,p])).values()];
 }
 function firstPriceNumber(value){
- const match=String(value||"").replace(/&nbsp;|&#160;/gi," ").match(/[-+]?\\d[\\d.,]*/);
+ const match=String(value||"").replace(/&nbsp;|&#160;/gi," ").match(/[-+]?\d[\d.,]*/);
  if(!match)return null;
  const n=Number(match[0].replace(/[.,]/g,""));
  return Number.isFinite(n)?n:null;
@@ -43,22 +43,22 @@ function extractNdh(html){
  const rest=html.slice(start);
  const stop=rest.search(/So với giá vàng thế giới/i);
  const section=stop>0?rest.slice(0,stop):rest;
- const tables=section.match(/<table\\b[\\s\\S]*?<\\/table>/gi)||[];
+ const tables=section.match(/<table\b[\s\S]*?<\/table>/gi)||[];
  const products=[];
  for(const table of tables){
-  const rows=table.match(/<tr\\b[\\s\\S]*?<\\/tr>/gi)||[];
+  const rows=table.match(/<tr\b[\s\S]*?<\/tr>/gi)||[];
   for(const row of rows){
-   const cells=[...row.matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi)].map(m=>cleanText(m[1]));
+   const cells=[...row.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m=>cleanText(m[1]));
    if(cells.length<3)continue;
    const name=cells[0];
    const buyK=firstPriceNumber(cells[1]),sellK=firstPriceNumber(cells[2]);
    if(!name||buyK===null||sellK===null||buyK<=0||sellK<=0||buyK>sellK)continue;
-   products.push({id:"vietinbank-"+name.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),name,buy:buyK*1000,sell:sellK*1000,unit:"VND/lượng",change:0});
+   products.push({id:"vietinbank-"+name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),name,buy:buyK*1000,sell:sellK*1000,unit:"VND/lượng",change:0});
   }
  }
  const unique=[...new Map(products.map(p=>[p.id,p])).values()];
  if(!unique.length)throw new Error("NDH không trả về sản phẩm giá mua/bán hợp lệ");
- const stamp=html.match(/Cập nhật lúc\\s*(\\d{1,2}:\\d{2})\\s*(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})/i);
+ const stamp=html.match(/Cập nhật lúc\s*(\d{1,2}:\d{2})\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
  const sourceUpdatedAt=stamp?stamp[4]+"-"+stamp[3].padStart(2,"0")+"-"+stamp[2].padStart(2,"0")+"T"+stamp[1]+":00+07:00":null;
  return {products:unique,sourceUpdatedAt};
 }
