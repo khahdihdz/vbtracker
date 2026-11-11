@@ -71,7 +71,15 @@ export default {
  async fetch(request,env){
   if(request.method==="OPTIONS")return new Response(null,{headers:CORS});
   const url=new URL(request.url);
-  if(url.pathname==="/api/health")return json({ok:true,service:"vietinbank-gold-tracker-api",time:now()});
+  if(url.pathname==="/api/health"){
+   if(url.searchParams.get("deep")==="1"){
+    const db=env.DB;
+    const info={ok:true,service:"vietinbank-gold-tracker-api",time:now(),dbPresent:!!db,dbType:typeof db,prepareType:typeof db?.prepare,dbKeys:db&&typeof db==="object"?Object.keys(db):[]};
+    if(typeof db?.prepare==="function"){try{await db.prepare("SELECT 1 AS ok").first();info.d1Query=true}catch(e){info.d1Query=false;info.d1Error=String(e?.message||e)}}
+    return json(info,info.d1Query===false?503:200);
+   }
+   return json({ok:true,service:"vietinbank-gold-tracker-api",time:now()});
+  }
   if(url.pathname==="/api/prices"&&request.method==="GET"){
    try { const data=await latest(env); return json(data,data.products.length?200:503); }
    catch(e) { console.error("GET /api/prices failed:",e); return json({ok:false,error:"PRICE_API_FAILED",detail:String(e?.message||e),fetchedAt:null,products:[],history:[]},503); }
