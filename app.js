@@ -18,7 +18,7 @@ function renderProducts() {
 }
 function renderHistory() {
   const rows = history.slice(0,100);
-  $("history-body").innerHTML = rows.length ? rows.map(h=>'<tr><td>'+esc(timeLabel(h.time))+'</td><td>'+esc(h.name)+'</td><td>'+money(h.buy)+'</td><td>'+money(h.sell)+'</td><td>'+money(Number(h.sell)-Number(h.buy))+'</td><td>'+esc(h.source||'—')+'</td></tr>').join("") : '<tr><td colspan="5" class="empty">Chưa có lịch sử. Lịch sử sẽ tích lũy sau khi hệ thống bắt đầu thu thập dữ liệu.</td></tr>';
+  $("history-body").innerHTML = rows.length ? rows.map(h=>'<tr><td>'+esc(timeLabel(h.time))+'</td><td>'+esc(h.name)+'</td><td>'+money(h.buy)+'</td><td>'+money(h.sell)+'</td><td>'+money(Number(h.sell)-Number(h.buy))+'</td><td>'+esc(h.source||'—')+'</td></tr>').join("") : '<tr><td colspan="6" class="empty">Chưa có lịch sử. Lịch sử sẽ tích lũy sau khi hệ thống bắt đầu thu thập dữ liệu.</td></tr>';
 }
 function renderChart() {
   const index = Number($("product-select").value || 0), p = products[index];
@@ -45,8 +45,9 @@ async function loadData(showSpinner=false) {
     lastPayload=data; renderProducts(); renderHistory(); renderChart();
     $("updated").textContent=timeLabel(data.fetchedAt || data.updatedAt);
     $("source-time").textContent="Nguồn: "+(data.source||"Không rõ")+(data.sourceUpdatedAt ? " · Công bố: "+timeLabel(data.sourceUpdatedAt) : " · Thời gian hệ thống nhận dữ liệu");
-    if(data.stale){setStatus("error","Dữ liệu cũ");setNotice("Không lấy được dữ liệu mới. Đang hiển thị bản ghi gần nhất từ VietinGold; vui lòng kiểm tra lại thời điểm cập nhật.",true)}
-    else {setStatus("ok","Đã kết nối");setNotice("Nguồn dữ liệu: VietinBank Gold & Jewellery. Chu kỳ kiểm tra phụ thuộc cấu hình backend; giá chỉ thay đổi khi nguồn công bố cập nhật.")}
+    if(data.stale){setStatus("error","Dữ liệu cũ");setNotice("Không lấy được dữ liệu mới. Đang hiển thị bản ghi gần nhất từ "+(data.source||"nguồn trước đó")+"; vui lòng kiểm tra lại thời điểm cập nhật.",true)}
+    else if(data.fallback){setStatus("error","Nguồn dự phòng NDH");setNotice("VietinBank chưa cung cấp dữ liệu hợp lệ ở lần kiểm tra này. Đang dùng bảng giá tham khảo từ NDH; hãy đối chiếu với website VietinBank trước khi giao dịch.",true)}
+    else {setStatus("ok","Đã kết nối");setNotice("Nguồn dữ liệu trực tiếp: VietinBank Gold & Jewellery. Chu kỳ kiểm tra phụ thuộc cấu hình backend; giá chỉ thay đổi khi nguồn công bố cập nhật.")}
   } catch(error) {
     setStatus("error","Mất kết nối");
     setNotice("Không thể lấy bảng giá VietinGold: "+error.message+". Không sử dụng giá thay thế hoặc dữ liệu giả lập.",true);
