@@ -85,10 +85,10 @@ async function fetchSource(env){
  try{return await readSource(primaryUrl,"VietinBank Gold")}
  catch(e){primaryError=String(e?.message||e);console.warn("Primary source failed:",primaryError)}
  try{
-  const fallback=await readSource(FALLBACK_URL,"NDH");
-  const parsed=extractNdh(await (await fetch(FALLBACK_URL,{headers:{"user-agent":"VBTracker/1.0","accept":"text/html"},cf:{cacheTtl:0,cacheEverything:false}})).text());
-  if(!parsed.products.length)throw new Error("NDH không có sản phẩm hợp lệ");
-  return {...fallback,...parsed,source:"NDH",sourceUrl:FALLBACK_URL,fallback:true,primaryError};
+  const response=await fetch(FALLBACK_URL,{headers:{"user-agent":"VBTracker/1.0 (price monitoring)","accept":"text/html"},cf:{cacheTtl:0,cacheEverything:false}});
+  if(!response.ok)throw new Error("NDH trả HTTP "+response.status);
+  const parsed=extractNdh(await response.text());
+  return {...parsed,source:"NDH",sourceUrl:FALLBACK_URL,fallback:true,primaryError};
  }catch(e){throw new Error("Nguồn VietinBank lỗi ("+primaryError+"); nguồn dự phòng NDH lỗi ("+String(e?.message||e)+")")}
 }
 async function ensureSchema(db){
