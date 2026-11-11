@@ -1,5 +1,5 @@
 const SOURCE_URL = "https://vangbac.vietinbankgold.vn/";
-const CORS = {"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type","cache-control":"no-store"};
+const CORS = {"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type, Authorization","cache-control":"no-store"};
 const json = (data,status=200)=>new Response(JSON.stringify(data),{status,headers:{...CORS,"content-type":"application/json; charset=utf-8"}});
 const now = ()=>new Date().toISOString();
 function cleanText(s){return String(s||"").replace(/<[^>]*>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/&#(\\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/\s+/g," ").trim()}
@@ -72,12 +72,15 @@ export default {
   if(request.method==="OPTIONS")return new Response(null,{headers:CORS});
   const url=new URL(request.url);
   if(url.pathname==="/api/health")return json({ok:true,service:"vietinbank-gold-tracker-api",time:now()});
-  if(url.pathname==="/api/prices"&&request.method==="GET"){const data=await latest(env);return json(data,data.products.length?200:503)}
+  if(url.pathname==="/api/prices"&&request.method==="GET"){
+   try { const data=await latest(env); return json(data,data.products.length?200:503); }
+   catch(e) { console.error("GET /api/prices failed:",e); return json({ok:false,error:"PRICE_API_FAILED",detail:String(e?.message||e),fetchedAt:null,products:[],history:[]},503); }
+  }
   if(url.pathname==="/api/sync"&&request.method==="POST"){
    if(!env.ADMIN_TOKEN||request.headers.get("authorization")!=="Bearer "+env.ADMIN_TOKEN)return json({error:"Unauthorized"},401);
    try{return json({ok:true,...await poll(env)})}catch(e){return json({ok:false,error:e.message},502)}
   }
   return json({error:"Not found"},404);
  },
- async scheduled(event,env,ctx){ctx.waitUntil(poll(env).catch(async e=>{await ensureSchema(env);await env.DB.prepare("INSERT OR REPLACE INTO tracker_state(key,value) VALUES('last_error',?)").bind(JSON.stringify({message:e.message,time:now()})).run()}))}
+ async scheduled(event,env,ctx){ctx.waitUntil(poll(env).catch(async e=>{console.error("Scheduled price poll failed:",e);try{await ensureSchema(env.DB);await env.DB.prepare("INSERT OR REPLACE INTO tracker_state(key,value) VALUES('last_error',?)").bind(JSON.stringify({message:String(e?.message||e),time:now()})).run()}catch(dbError){console.error("Could not persist scheduled error:",dbError)}}))}
 };
