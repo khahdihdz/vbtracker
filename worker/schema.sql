@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS price_snapshots (
   buy REAL NOT NULL,
   sell REAL NOT NULL,
   unit TEXT,
-  captured_at TEXT NOT NULL,
+  captured_at TEXT NOT NULL,\n  source TEXT,
   UNIQUE(product_id, captured_at)
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_product_time
